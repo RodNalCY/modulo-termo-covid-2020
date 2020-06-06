@@ -18,7 +18,7 @@ PMS::DATA data;
 #define pinLEDRED   D7
 ////////////////////////DEFINIMOS//EL//PIN//DEL//SENSOR//DHT22/////////////////////////////////
 #include "DHT.h" //cargamos la librería DHT
-#define DHTPIN D3 //Seleccionamos el pin en el que se conectará el sensor
+#define DHTPIN D4 //Seleccionamos el pin en el que se conectará el sensor
 #define DHTTYPE DHT22 //Se selecciona el DHT22(hay otros DHT11)
 DHT dht(DHTPIN, DHTTYPE); //Se inicia una variable que será usada por Arduino para comunicarse con el sensor
 //////////////////////////CONFIGURACION//DEL//SERVIDOR////////////////////////////////////////
@@ -27,6 +27,8 @@ DHT dht(DHTPIN, DHTTYPE); //Se inicia una variable que será usada por Arduino p
 const String url =  "/api/medida";
 const char* host = "covid19.labgt.com"; //localhost or www.tecnologiaperu.com
 const uint16_t port = 80;  // HTTP PORT
+const String AP_NAME_SERVER = "WF-COVID-2020";
+const String AP_PASW_SERVER = "123456789";
 //////////////////////DEFINIMOS//EL//CODIGO//DEL//SENSOR//RESPECTIVAMENTE//////////////////////
 String codigoPM  =  "CODPEM001";
 String codigoDT  =  "CODDTE001";
@@ -98,7 +100,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>KairOS</title>
+<title>Termo Covid 20</title>
 <style>
 body{
   background-color: #E6C00B;
@@ -243,7 +245,7 @@ span{
        </td>
        
        <td>
-        <h2>Air Quality ☁ KairOS </h2>
+        <h2>Termo ☁ Covid </h2>
         <p type="SSID:">        
           <input type="text" 
           name="ssid" 
@@ -269,7 +271,7 @@ span{
   </table>
   <div class="contacto">
     <span class="fa fa-phone"></span>☏ (+51) 912 101 970
-    <span class="fa fa-envelope-o"></span>✉ rcabello@kairos.com.pe
+    <span class="fa fa-envelope-o"></span>✉ rcabello@covid.com.pe
   </div>
 </form>
 </body></html>
@@ -337,12 +339,12 @@ void setup() {
   WiFi.mode(WIFI_STA);
   Serial.println();
 
-  Serial.print("Setting AP_KairOS_PL configuration ... ");
+  Serial.print("Setting "+AP_NAME_SERVER+" configuration ... ");
   Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
-  Serial.print("Setting AP_KairOS_PL ... ");
-  Serial.println(WiFi.softAP("AP_KairOS_PL", "987654321") ? "Ready" : "Failed!");
+  Serial.print("Setting "+AP_NAME_SERVER+" ... ");
+  Serial.println(WiFi.softAP(AP_NAME_SERVER, AP_PASW_SERVER) ? "Ready" : "Failed!");
 
-  Serial.print("AP_KairOS_PL IP address = ");
+  Serial.print(AP_NAME_SERVER+" IP address = ");
   Serial.println(WiFi.softAPIP());
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Send web page with input fields to client
