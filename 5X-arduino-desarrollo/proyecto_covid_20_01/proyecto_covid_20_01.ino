@@ -59,10 +59,16 @@ static float readTemperaturaObjeto(){
 
 void writeDisplayTemperatura(){
   display.clearDisplay();
+
+  display.setTextSize(1);                    
+  display.setTextColor(WHITE);             
+  display.setCursor(0,1); 
+  display.print("IP: ");    
+  display.println("192.168.100.149"); 
   
   display.setTextSize(1);                    
   display.setTextColor(WHITE);             
-  display.setCursor(0,2); 
+  display.setCursor(0,9); 
   display.print("T:");                
   display.print(global_medidaTEM,1);
   display.print(" "); 
@@ -82,9 +88,9 @@ void writeDisplayTemperatura(){
   display.println("T.C : "); 
   
   display.setTextSize(2);
-  display.setCursor(37,15);
+  display.setCursor(37,18);
   display.println(global_medidaCoorporal,1);  
-  display.setCursor(95,15);
+  display.setCursor(95,18);
   display.setTextSize(1);
   display.cp437(true);
   display.write(167);
