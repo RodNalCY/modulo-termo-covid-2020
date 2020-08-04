@@ -22,10 +22,10 @@ IPAddress subnet(255, 255, 255, 0);
 AsyncWebServer server(80);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define pinALERTA   D5 
-#define pinLedGRN   D6
-#define pinLEDRED   D7
-#define pinLedDISTANCIA   D8
+#define PIN_BUZZER  D8
+#define LED_RED     D5 
+#define LED_GREEN   D6 
+#define LED_BLUE    D7
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 int global_active_json_system_alert = 0; 
 int global_active_json_server = 0; 
@@ -377,51 +377,81 @@ void writeDisplayTemperaturaDefault(){
   delay(100);
   
 }
-void alarmaTemperaturaNormal(){
-   digitalWrite(pinLedGRN,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLedGRN,LOW);
-    digitalWrite(pinALERTA,LOW);
-    delay(300);
-    digitalWrite(pinLedGRN,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLedGRN,LOW); 
-    digitalWrite(pinALERTA,LOW);
-    delay(300);
-    digitalWrite(pinLedGRN,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLedGRN,LOW);
-    digitalWrite(pinALERTA,LOW);
+void alarmaBlueAlert(){
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 1);  
+  delay(100);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(100);
+  
 }
-
-void alarmaTemperaturaAlta(){
-    digitalWrite(pinLEDRED,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLEDRED,LOW);
-    digitalWrite(pinALERTA,LOW);
-    delay(300);
-    digitalWrite(pinLEDRED,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLEDRED,LOW);
-    digitalWrite(pinALERTA,LOW);
-    delay(300);
-    digitalWrite(pinLEDRED,HIGH);
-    digitalWrite(pinALERTA,HIGH);
-    delay(300);
-    digitalWrite(pinLEDRED,LOW);
-    digitalWrite(pinALERTA,LOW);
+void alarmaRedAlert(){
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_RED, 1);
+  tone(PIN_BUZZER, 125, 500);
+  delay(1000);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(500);
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_RED, 1);
+  tone(PIN_BUZZER, 125, 500);
+  delay(1000);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(500);
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_RED, 1);
+  tone(PIN_BUZZER, 125, 500);
+  delay(1000);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(500);
+}
+void alarmaGreenAlert(){
+  analogWrite(LED_RED, 255);    
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_GREEN, 1);
+  tone(PIN_BUZZER, 2000, 300);
+  delay(300);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(300);
+  analogWrite(LED_RED, 255);    
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_GREEN, 1);
+  tone(PIN_BUZZER, 2000, 300);
+  delay(300);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(300);
+  /*analogWrite(LED_RED, 255);    
+  analogWrite(LED_BLUE, 255);
+  analogWrite(LED_GREEN, 1);
+  tone(PIN_BUZZER, 2000, 500);
+  delay(500);
+  analogWrite(LED_RED, 255);  
+  analogWrite(LED_GREEN, 255);
+  analogWrite(LED_BLUE, 255);  
+  delay(500);*/
 }
 //Metodo HTTP GET -> Metodo de Respuesta en JSON
 void getByTemperatureHandler(AsyncWebServerRequest *request)
 {
 
   int key = GetIdFromURL(request, "/temperature/");
-  global_active_json_system_alert = 1; 
+  global_active_json_system_alert = 1;  
   if(key==1 && global_medida_coorp_objeto_str >= "36.00" && global_medida_coorp_objeto_str <= "40.00"){
       handleRootSuccess();         
   }else if(key==1 && global_medida_coorp_objeto_str >="20.00" && global_medida_coorp_objeto_str <= "35.00"){
@@ -483,10 +513,14 @@ void setup() {
    display.clearDisplay();
    display.display();
    ///////////////////////////////////////////////////////
-    pinMode(pinALERTA, OUTPUT);
-    pinMode(pinLEDRED, OUTPUT);
-    pinMode(pinLedGRN, OUTPUT);
-    pinMode(pinLedDISTANCIA, OUTPUT);
+    pinMode(PIN_BUZZER, OUTPUT);
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_GREEN, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
+    analogWriteRange(255);
+    analogWrite(LED_RED, 255);
+    analogWrite(LED_GREEN, 255);
+    analogWrite(LED_BLUE, 255);
    
    ///////////////////////////////////////////////////////
    termometroIR.begin();
@@ -578,32 +612,39 @@ void loop() {
     Serial.print("T.C: ");
     Serial.println(global_medida_coorp_objeto_str);
 
-    if(global_medida_coorp_objeto>=35.7 && global_medida_coorp_objeto <= 40.00){
-       /* digitalWrite(pinLedDISTANCIA,HIGH);pinALERTA
-        delay(100);
-        digitalWrite(pinLedDISTANCIA,LOW);
-        delay(100);*/  
-
-        digitalWrite(pinALERTA,HIGH);
-        delay(100);
-        digitalWrite(pinALERTA,LOW);
-        delay(100); 
-
-        if(global_active_json_system_alert == 1){
-           if(global_medida_coorp_objeto >= 37.51 && global_medida_coorp_objeto <= 40.00){
-               //writeDisplayTemperatura();
-               alarmaTemperaturaAlta();
+    if(global_medida_coorp_objeto>=36.00 && global_medida_coorp_objeto <= 100.00){
+       
+       analogWrite(LED_RED, 255);  
+       analogWrite(LED_GREEN, 255);
+       analogWrite(LED_BLUE, 1);         
+       /*delay(500);
+       analogWrite(LED_RED, 255);  
+       analogWrite(LED_GREEN, 255);
+       analogWrite(LED_BLUE, 255);  */
+       //tone(PIN_BUZZER, 1000, 500);
+       //delay(800);
+        if(global_active_json_system_alert == 1){      
+           if(global_medida_coorp_objeto >= 37.51 && global_medida_coorp_objeto <= 45.00){
+            //writeDisplayTemperatura();
+               //alarmaRedAlert();
+               alarmaGreenAlert();   
                delay(1000);
            }else if(global_medida_coorp_objeto >= 36.00 && global_medida_coorp_objeto < 37.50){
-              //writeDisplayTemperatura();
-              alarmaTemperaturaNormal();    
+            //writeDisplayTemperatura();
+              alarmaGreenAlert();    
               delay(1000);
            }
-          Serial.println(global_active_json_system_alert);
-          global_active_json_system_alert = 0;
-         }
-        
-    }   
+            global_active_json_system_alert = 0;
+            Serial.println(global_active_json_system_alert);           
+            servidorAPIRestfullOn();
+         }    
+    }   else{
+      //delay(500);
+       analogWrite(LED_RED, 255);  
+       analogWrite(LED_GREEN, 255);
+       analogWrite(LED_BLUE, 255); 
+       
+       }
     
   }
 }
