@@ -3,8 +3,10 @@
 #include <FS.h>
 #include <ArduinoJson.h>
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*const char* ssid     = "$_WiFi-Plus_$";
-const char* password = "MiRedWifi9876543210AZ";*/
+/*
+ * const char* ssid     = "$_WiFi-Plus_$";
+ * const char* password = "MiRedWifi9876543210AZ";
+ */
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -23,8 +25,10 @@ AsyncWebServer server(80);
 #define pinALERTA   D5 
 #define pinLedGRN   D6
 #define pinLEDRED   D7
+#define pinLedDISTANCIA   D8
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+int global_active_json_system_alert = 0; 
+int global_active_json_server = 0; 
 const char* PARAM_FILTER = "filter";
 String global_json_payload = "";
 String json_status_success = "success";
@@ -53,7 +57,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Termo Covid 20</title>
+<title>Termo Covid 19</title>
 <style>
 body{
   background-color: #E6C00B;
@@ -244,7 +248,7 @@ void dontConexionWifiAlert(){
   display.setCursor(0,10);                
   display.println("! WIFI NO CONECTADO !"); 
   display.setCursor(60,20);       
-   display.println("XO");  
+  display.println("XO");  
   display.display();
   delay(500);
 }
@@ -256,137 +260,16 @@ void dontConexionSeonsorOffAlert(){
   display.setCursor(0,10);                
   display.println("!Sensor No Conectado!"); 
   display.setCursor(60,20);       
-   display.println("XO");  
+  display.println("XO");  
   display.display();
   delay(500);
 }
 //////////////////////////////////////////////////////////////////////////////////////
-void servidorAPIRestfullOn(){
-  server.on("/", HTTP_GET, homeRequest);
-   server.on("/temperature", HTTP_GET, getRequestTemperature); 
-   server.onNotFound(notFound);
-   server.begin();
-   Serial.println("HTTP server API started");
-}
-/////////////////////////////////////////////////////////////////////////////////////////
-void setup() {
-   Serial.begin(9600);
-   /////////////////////////////////////////////////////////////////////////////////////////////
-   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); //Start the OLED display
-   display.clearDisplay();
-   display.display();
-   ///////////////////////////////////////////////////////
-    pinMode(pinALERTA, OUTPUT);
-    pinMode(pinLEDRED, OUTPUT);
-    pinMode(pinLedGRN, OUTPUT);
-   ///////////////////////////////////////////////////////
-   termometroIR.begin();
-   /////////////////////////////////////////////////////////////////////////////////////////////
-  Serial.print("Node MCU Chip Id : ");
-  String chip_id = String(ESP.getChipId());
-  Serial.println(chip_id);
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  WiFi.mode(WIFI_STA);
-  Serial.println();
-  Serial.print("Setting "+AP_NAME_SERVER+" configuration ... ");
-  Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
-  Serial.print("Setting "+AP_NAME_SERVER+" ... ");
-  Serial.println(WiFi.softAP(AP_NAME_SERVER, AP_PASW_SERVER) ? "Ready" : "Failed!");
-  Serial.print(AP_NAME_SERVER+" IP address = ");
-  Serial.println(WiFi.softAPIP());
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  // Send web page with input fields to client
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send_P(200, "text/html", index_html);
-  });
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest * request) {
-    String gettingSSID;
-    String gettingPASS;
-    String inputParamSSID;
-    String inputParamPASS;
-    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
-    if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2)) {
-      gettingSSID  = request->getParam(PARAM_INPUT_1)->value();
-      gettingPASS = request->getParam(PARAM_INPUT_2)->value();
-      inputParamSSID  = PARAM_INPUT_1;
-      inputParamPASS  = PARAM_INPUT_2;
-      //WiFi.softAPdisconnect(true);
-      //WiFi.disconnect(true);
-    }
-    else {
-      gettingSSID = "No message sent SSID";
-      inputParamSSID = "none SSID";
-      gettingPASS = "No message sent PASS";
-      inputParamPASS = "none PASS";
-    }
-    Serial.println(gettingSSID);
-    Serial.println(gettingPASS);
-    ssid = gettingSSID;
-    password = gettingPASS;
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    if (ssid != "" && password != "") {
-      Serial.print("'Conectando Modulo' a la RED WiFi espere por favor (...) : ");
-      Serial.println(ssid);
-      delay(700);
-      WiFi.begin(ssid, password);
-      Serial.println("WiFi Conectado");
-      Serial.println("Mi direccion IP: ");
-      Serial.println(WiFi.localIP());   
-    }       
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    request->send(200, "text/html", "<script>alert('Gracias'); window.location.href = '/';</script>");
-  });
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  server.onNotFound(notFound);
-  server.begin();  
-  /////////////////////////////////////////////////////////////////////////////////////////////
-  delay(2000);
-     if(WiFi.localIP()){
-        Serial.print("GET IP :");
-        Serial.println(WiFi.localIP());
-        servidorAPIRestfullOn();
-      }else{
-       Serial.println("IP NO ENCONTRADA");
-       dontConexionWifiAlert();
-     }    
-}
-
-void loop() { 
-  
-  if (WiFi.localIP()) {
-    readTemperaturaObjeto(); 
-    writeDisplayTemperaturaDefault();
-       
-    global_medida_coorp_objeto_str = String(global_medida_coorp_objeto);   
-    Serial.print("T.C: ");
-    Serial.println(global_medida_coorp_objeto_str);                                  
-    
-    if(global_medida_coorp_objeto >= 36.00 && global_medida_coorp_objeto < 37.50){
-         writeDisplayTemperatura();
-         alarmaTemperaturaNormal();    
-         delay(1000);
-      }else if(global_medida_coorp_objeto >= 37.50 && global_medida_coorp_objeto <= 40.00){
-         writeDisplayTemperatura();
-         alarmaTemperaturaAlta();
-         delay(1000);
-      }else if(global_medida_coorp_objeto >= 40){
-         //dontConexionSeonsorOffAlert();  
-         //writeDisplayTemperaturaDefault();
-         alarmaTemperaturaAlta();
-      } 
-      //delay(100);
-  } 
-}
-static float readTemperaturaObjeto(){
-  for(int i=0; i<20; i++){
-    global_medida_coorp_objeto = termometroIR.readObjectTempC() + global_medida_coorp_objeto;
-    delay(10);
-  }
-  global_medida_coorp_objeto /=20.0;  
-  global_medida_coorp_objeto += 1.0;
-  return global_medida_coorp_objeto;
+void getFiltered(AsyncWebServerRequest *request)
+{
+  String message = "Key get filtered by " + request->getParam(PARAM_FILTER)->value();
+  Serial.println(message);
+  request->send(200, "text/plain", message);
 }
 int GetIdFromURL(AsyncWebServerRequest *request, String root)
 {
@@ -394,53 +277,6 @@ int GetIdFromURL(AsyncWebServerRequest *request, String root)
   string_id.replace(root, "");
   int id = string_id.toInt();
   return id;
-}
-void getAll(AsyncWebServerRequest *request)
-{
-  String message = "200 - Wellcome to the API TermoCovID 20";
-  Serial.println(message);
-  request->send(200, "text/plain", message);
-}
-
-void getFiltered(AsyncWebServerRequest *request)
-{
-  String message = "Key get filtered by " + request->getParam(PARAM_FILTER)->value();
-  Serial.println(message);
-  request->send(200, "text/plain", message);
-}
-//Metodo HTTP GET -> Metodo de Respuesta en JSON
-void getByTemperatureHandler(AsyncWebServerRequest *request)
-{
-  int key = GetIdFromURL(request, "/temperature/");
-     
-  if(key==1 && global_medida_coorp_objeto_str >= "35.00" && global_medida_coorp_objeto_str<"38.00"){
-      handleRootSuccess();
-  }else if(key==1 && global_medida_coorp_objeto_str >="20.00" && global_medida_coorp_objeto_str <= "35.00"){
-      handleRootWarning(); 
-  }else if (key==1 && global_medida_coorp_objeto_str >="1000") {
-      handleRootError(); 
-  }else if(key!=1){
-    handleRootNotFund();    
-  }
-    
-  String message = global_json_payload;
-  Serial.println(message);
-  request->send(200, "text/plain", message);
-}
-
-//Metodo que obtiene el HTTP GET -> Metodo de Entrada
-void getRequestTemperature(AsyncWebServerRequest *request) {
-  
-  if (request->hasParam(PARAM_FILTER)) {
-    getFiltered(request);
-  }
-  else if(request->url().indexOf("/temperature/") != -1)
-  {
-    getByTemperatureHandler(request);
-  }
-  else {
-    getAll(request);
-  }
 }
 
 //Handles http request Success
@@ -480,9 +316,10 @@ void handleRootNotFund() {
   JsonObject& root = jsonBuffer.createObject();
 
   root["status"]  = json_status_error; //Put Sensor value
-  root["message"] = "Error 404 - Server Not Found"; //Reads Flash Button Status 
+  root["message"] = "Error 404 - JSON Server Not Found"; //Reads Flash Button Status 
   root.printTo(global_json_payload);  //Store JSON in String variable
 }
+
 
 void writeDisplayTemperatura(){
   display.clearDisplay();
@@ -561,7 +398,7 @@ void alarmaTemperaturaNormal(){
 }
 
 void alarmaTemperaturaAlta(){
-   digitalWrite(pinLEDRED,HIGH);
+    digitalWrite(pinLEDRED,HIGH);
     digitalWrite(pinALERTA,HIGH);
     delay(300);
     digitalWrite(pinLEDRED,LOW);
@@ -579,3 +416,197 @@ void alarmaTemperaturaAlta(){
     digitalWrite(pinLEDRED,LOW);
     digitalWrite(pinALERTA,LOW);
 }
+//Metodo HTTP GET -> Metodo de Respuesta en JSON
+void getByTemperatureHandler(AsyncWebServerRequest *request)
+{
+
+  int key = GetIdFromURL(request, "/temperature/");
+  global_active_json_system_alert = 1; 
+  if(key==1 && global_medida_coorp_objeto_str >= "36.00" && global_medida_coorp_objeto_str <= "40.00"){
+      handleRootSuccess();         
+  }else if(key==1 && global_medida_coorp_objeto_str >="20.00" && global_medida_coorp_objeto_str <= "35.00"){
+      handleRootWarning();
+  }else if (key==1 && global_medida_coorp_objeto_str >="1000") {
+      handleRootError(); 
+  }else if(key!=1){
+     handleRootNotFund();    
+  }
+    
+  String message = global_json_payload;
+  Serial.println(message);
+  request->send(200, "text/plain", message);
+}
+void getAll(AsyncWebServerRequest *request)
+{
+  String message = "200 - Wellcome to the API TermoCovID 20";
+  Serial.println(message);
+  request->send(200, "text/plain", message);
+}
+
+//Metodo que obtiene el HTTP GET -> Metodo de Entrada
+void getRequestTemperature(AsyncWebServerRequest *request) {
+ 
+  if (request->hasParam(PARAM_FILTER)) {
+    getFiltered(request);
+  }
+  else if(request->url().indexOf("/temperature/") != -1)
+  {
+    getByTemperatureHandler(request);
+  }
+  else {
+    getAll(request);
+  }
+}
+
+void servidorAPIRestfullOn(){
+   server.on("/", HTTP_GET, homeRequest);
+   server.on("/temperature", HTTP_GET, getRequestTemperature); 
+   server.onNotFound(notFound);
+   server.begin();
+   Serial.println("HTTP server API started");
+}
+
+static float readTemperaturaObjeto(){
+  for(int i=0; i<20; i++){
+    global_medida_coorp_objeto = termometroIR.readObjectTempC() + global_medida_coorp_objeto;
+    delay(10);
+  }
+  global_medida_coorp_objeto /=20.0;  
+  global_medida_coorp_objeto += 0.5;
+  return global_medida_coorp_objeto;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+void setup() {
+   Serial.begin(9600);
+   /////////////////////////////////////////////////////////////////////////////////////////////
+   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); //Start the OLED display
+   display.clearDisplay();
+   display.display();
+   ///////////////////////////////////////////////////////
+    pinMode(pinALERTA, OUTPUT);
+    pinMode(pinLEDRED, OUTPUT);
+    pinMode(pinLedGRN, OUTPUT);
+    pinMode(pinLedDISTANCIA, OUTPUT);
+   
+   ///////////////////////////////////////////////////////
+   termometroIR.begin();
+   /////////////////////////////////////////////////////////////////////////////////////////////
+  Serial.print("Node MCU Chip Id : ");
+  String chip_id = String(ESP.getChipId());
+  Serial.println(chip_id);
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  WiFi.mode(WIFI_STA);
+  Serial.println();
+  Serial.print("Setting "+AP_NAME_SERVER+" configuration ... ");
+  Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
+  Serial.print("Setting "+AP_NAME_SERVER+" ... ");
+  Serial.println(WiFi.softAP(AP_NAME_SERVER, AP_PASW_SERVER) ? "Ready" : "Failed!");
+  Serial.print(AP_NAME_SERVER+" IP address = ");
+  Serial.println(WiFi.softAPIP());
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  // Send web page with input fields to client
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send_P(200, "text/html", index_html);
+  });
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  // Send a GET request to <ESP_IP>/get?input1=<inputMessage>
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest * request) {
+    String gettingSSID;
+    String gettingPASS;
+    String inputParamSSID;
+    String inputParamPASS;
+    // GET input1 value on <ESP_IP>/get?input1=<inputMessage>
+    if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2)) {
+      gettingSSID  = request->getParam(PARAM_INPUT_1)->value();
+      gettingPASS = request->getParam(PARAM_INPUT_2)->value();
+      inputParamSSID  = PARAM_INPUT_1;
+      inputParamPASS  = PARAM_INPUT_2;
+      //WiFi.softAPdisconnect(true);
+      //WiFi.disconnect(true);
+    }
+    else {
+      gettingSSID = "No message sent SSID";
+      inputParamSSID = "none SSID";
+      gettingPASS = "No message sent PASS";
+      inputParamPASS = "none PASS";
+    }
+    Serial.println(gettingSSID);
+    Serial.println(gettingPASS);
+    ssid = gettingSSID;
+    password = gettingPASS;
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    if (ssid != "" && password != "") {
+      Serial.print("'Conectando Modulo' a la RED WiFi espere por favor (...) : ");
+      Serial.println(ssid);
+      delay(700);
+      WiFi.begin(ssid, password);
+      Serial.println("WiFi Conectado");
+      Serial.println("Mi direccion IP: ");
+      Serial.println(WiFi.localIP());   
+    }       
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    request->send(200, "text/html", "<script>alert('Gracias'); window.location.href = '/';</script>");
+  });
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  server.onNotFound(notFound);
+  server.begin();  
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  delay(2000); 
+  
+  global_active_json_server = 0;
+     if(WiFi.localIP()){
+        Serial.print("GET IP :");
+        Serial.println(WiFi.localIP());   
+      }else{
+       Serial.println("IP NO ENCONTRADA");
+       dontConexionWifiAlert();
+     }    
+}
+void loop() { 
+  
+  if (WiFi.localIP()) {   
+    
+    if(global_active_json_server==0){
+      servidorAPIRestfullOn();
+      global_active_json_server=1;
+    }
+    
+    
+    readTemperaturaObjeto(); 
+    //writeDisplayTemperaturaDefault();
+    global_medida_coorp_objeto_str = String(global_medida_coorp_objeto);   
+    Serial.print("T.C: ");
+    Serial.println(global_medida_coorp_objeto_str);
+
+    if(global_medida_coorp_objeto>=35.7 && global_medida_coorp_objeto <= 40.00){
+       /* digitalWrite(pinLedDISTANCIA,HIGH);pinALERTA
+        delay(100);
+        digitalWrite(pinLedDISTANCIA,LOW);
+        delay(100);*/  
+
+        digitalWrite(pinALERTA,HIGH);
+        delay(100);
+        digitalWrite(pinALERTA,LOW);
+        delay(100); 
+
+        if(global_active_json_system_alert == 1){
+           if(global_medida_coorp_objeto >= 37.51 && global_medida_coorp_objeto <= 40.00){
+               //writeDisplayTemperatura();
+               alarmaTemperaturaAlta();
+               delay(1000);
+           }else if(global_medida_coorp_objeto >= 36.00 && global_medida_coorp_objeto < 37.50){
+              //writeDisplayTemperatura();
+              alarmaTemperaturaNormal();    
+              delay(1000);
+           }
+          Serial.println(global_active_json_system_alert);
+          global_active_json_system_alert = 0;
+         }
+        
+    }   
+    
+  }
+}
+
+
+  
